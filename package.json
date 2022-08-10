@@ -1,0 +1,17 @@
+{
+  "name": "runner-auto-scale",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "deno run --allow-net --allow-read --allow-env --allow-run --watch src/index.ts",
+    "lint": "deno lint --unstable src",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "smee-client": "^1.2.3"
+  }
+}

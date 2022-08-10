@@ -1,0 +1,7 @@
+#!/bin/bash
+
+COMMAND="docker run -d --rm  -e RUNNER_NAME_PREFIX=$RUNNER_NAME_PREFIX -e ACCESS_TOKEN=$ACCESS_TOKEN -e RUNNER_SCOPE=$RUNNER_SCOPE -e ORG_NAME=$ORG_NAME -e LABELS=$LABELS -e EPHEMERAL=1 myoung34/github-runner:latest"
+
+echo "$COMMAND"
+
+eval "$COMMAND"
