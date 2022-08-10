@@ -7,14 +7,27 @@ interface WorkflowJob {
     runner_group_name: string;
 }
 
+interface WorkflowRun {
+    id: number;
+    name: string;
+    url: string;
+}
+
 interface Organization {
     name: string;
     id: number;
 }
 
+interface RepositoryOwner {
+    login: string
+    type: string
+}
+
 interface Respository {
     name: string;
     full_name: string;
+    owner: RepositoryOwner
+    html_url: string
 }
 
 interface Sender {
@@ -22,45 +35,52 @@ interface Sender {
     type: string;
 }
 
-export interface Workflow {
+export interface WorkflowInterface {
     action: string;
-    workflow_job: WorkflowJob;
-    organization: Organization;
+    workflow_job?: WorkflowJob | undefined;
+    workflow_run?: WorkflowRun | undefined;
+    organization?: Organization | undefined;
     repository: Respository;
     sender: Sender;
 }
 
+interface jobs {
+    id: number,
+    scope: string
+    owner: string
+    url: string
+}
 
-export class WorkflowRun {
-    queuedRuns: Array<number>;
-    inProgressRuns: Array<number>;
-    completedRuns: Array<number>;
+export class Workflow {
+    queuedRuns: Array<jobs>;
+    inProgressRuns: Array<jobs>;
+    completedRuns: Array<jobs>;
 
     constructor() {
-        this.queuedRuns = Array<number>()
-        this.inProgressRuns = Array<number>()
-        this.completedRuns = Array<number>()
+        this.queuedRuns = Array<jobs>()
+        this.inProgressRuns = Array<jobs>()
+        this.completedRuns = Array<jobs>()
     }
 
     /**
      * 
-     * @return {Array<number>} array of jobs queued
+     * @return {Array<jobs>} array of jobs queued
      */
-    getQueuedRun(): Array<number> {
+    getQueuedRun(): Array<jobs> {
         return this.queuedRuns
     }
     /**
      * 
-     * @return {Array<number>} array of jobs in progress
+     * @return {Array<jobs>} array of jobs in progress
      */
-    getInProcessRun(): Array<number> {
+    getInProcessRun(): Array<jobs> {
         return this.inProgressRuns
     }
     /**
      * 
-     * @return {Array<number>} array of jobs completed
+     * @return {Array<jobs>} array of jobs completed
      */
-    getCompletedRun(): Array<number> {
+    getCompletedRun(): Array<jobs> {
         return this.completedRuns
     }
 
@@ -68,16 +88,32 @@ export class WorkflowRun {
      * 
      * @param {number} jobId job id of the workflow job
      */
-    addToQueuedRuns(jobId: number): void {
-        this.queuedRuns.push(jobId)
-        console.log(`${jobId} queued.`)
+    addToQueuedRuns(jobId: number, scope: string, owner: string, repoURL: string): void {
+        const job: jobs = {
+            id: jobId,
+            scope: scope,
+            owner: owner,
+            url: repoURL
+        }
+        this.queuedRuns.push(job)
+        if (scope === "repo") {
+            console.log(`${jobId} requested.`)
+        } else {
+            console.log(`${jobId} queued.`)
+        }
     }
     /**
      * 
      * @param {number} jobId job id of the workflow job
      */
-    addToInProgressRuns(jobId: number): void {
-        this.inProgressRuns.push(jobId)
+    addToInProgressRuns(jobId: number, scope: string, owner: string, repoURL: string): void {
+        const job: jobs = {
+            id: jobId,
+            scope: scope,
+            owner: owner,
+            url: repoURL
+        }
+        this.inProgressRuns.push(job)
         this.removeFromQueuedRuns(jobId)
         console.log(`${jobId} in progress.`)
     }
@@ -85,9 +121,16 @@ export class WorkflowRun {
      * 
      * @param {number} jobId job id of the workflow job
      */
-    addToCompletedRuns(jobId: number): void {
-        this.completedRuns.push(jobId)
-        this.removeFromCompletedRuns(jobId)
+    addToCompletedRuns(jobId: number, scope: string, owner: string, repoURL: string): void {
+        const job: jobs = {
+            id: jobId,
+            scope: scope,
+            owner: owner,
+            url: repoURL
+        }
+        this.completedRuns.push(job)
+        this.removeFromQueuedRuns(jobId)
+        this.removeFromInProgressRuns(jobId)
         console.log(`${jobId} completed.`)
     }
 
@@ -95,7 +138,7 @@ export class WorkflowRun {
      * 
      * @param {number} jobId job id of the workflow job
      */
-    removeFromQueuedRuns(jobId: number): Array<number> {
+    removeFromQueuedRuns(jobId: number): Array<jobs> {
         return this._removeFromNumberArray(jobId, this.queuedRuns)
     }
     /**
@@ -103,7 +146,7 @@ export class WorkflowRun {
      * @param {number} jobId job id of the workflow job
      * @returns {Array<number>} new array
      */
-    removeFromInProgressRuns(jobId: number): Array<number> {
+    removeFromInProgressRuns(jobId: number): Array<jobs> {
         return this._removeFromNumberArray(jobId, this.inProgressRuns)
     }
     /**
@@ -111,7 +154,7 @@ export class WorkflowRun {
      * @param {number} jobId job id of the workflow job
      * @returns {Array<number>} new array
      */
-    removeFromCompletedRuns(jobId: number): Array<number> {
+    removeFromCompletedRuns(jobId: number): Array<jobs> {
         return this._removeFromNumberArray(jobId, this.completedRuns)
     }
 
@@ -119,16 +162,18 @@ export class WorkflowRun {
     /**
      * Helper function to remove an element from an array of numbers
      * @param {number} item number
-     * @param {Array<number>} array of number
-     * @returns {Array<number>} the new spliced array
+     * @param {Array<jobs>} array of number
+     * @returns {Array<jobs>} the new spliced array
      */
-    _removeFromNumberArray(item: number, array: Array<number>): Array<number> {
-        const index = array.indexOf(item);
-        // only splice array when item is found
-        if (index > -1) {
-            // 2nd parameter means remove one item only
-            return array.splice(index, 1);
-        }
+    _removeFromNumberArray(item: number, array: Array<jobs>): Array<jobs> {
+        array.forEach((job, index) => {
+            if (job.id === item) { // only splice array when item is found
+                if (index > -1) {
+                    // 2nd parameter means remove one item only
+                    return array.splice(index, 1);
+                }
+            }
+        })
         return array
     }
 }

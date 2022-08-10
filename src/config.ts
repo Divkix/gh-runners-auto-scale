@@ -3,7 +3,6 @@ export interface configFormat {
     runAsRoot: boolean
     accessToken: string;
     runnerScope: string;
-    orgName: string;
     enterpreiseName: string;
     labels: string;
     repoUrl: string;
@@ -26,6 +25,17 @@ export class Config {
     }
 
     /**
+     * Checks if the config is valid or not
+     * @param config the config object
+     */
+    static checkConfig(config: configFormat): void {
+        if (config.accessToken === undefined) {
+            throw new Error("access token not set, this needs to be set to make this script work!")
+        }
+        return
+    }
+
+    /**
      * 
      * @returns {configFormat} the config object
      */
@@ -37,7 +47,6 @@ export class Config {
             runAsRoot: env.runAsRoot || dotEnvConfig.RUN_AS_ROOT !== "" || true,
             accessToken: env.accessToken || dotEnvConfig.ACCESS_TOKEN,
             runnerScope: env.runnerScope || dotEnvConfig.RUNNER_SCOPE,
-            orgName: env.orgName || dotEnvConfig.ORG_NAME,
             enterpreiseName: env.enterpreiseName || dotEnvConfig.ENTERPREISE_NAME,
             labels: env.labels || dotEnvConfig.LABELS,
             repoUrl: env.repoUrl || dotEnvConfig.REPO_URL,
@@ -45,6 +54,7 @@ export class Config {
             runnerNamePrefix: env.runnerNamePrefix || dotEnvConfig.RUNNER_NAME_PREFIX || "runner-auto-scale",
             githubHost: env.githubHost || dotEnvConfig.GITHUB_HOST || 'https://api.github.com'
         }
+        Config.checkConfig(newEnv)
         return newEnv;
     }
 
@@ -57,7 +67,6 @@ export class Config {
             runAsRoot: Deno.env.get('RUN_AS_ROOT') !== "",
             accessToken: <string>Deno.env.get('ACCESS_TOKEN'),
             runnerScope: <string>Deno.env.get('RUNNER_SCOPE'),
-            orgName: <string>Deno.env.get('ORG_NAME'),
             enterpreiseName: <string>Deno.env.get('ENTERPREISE_NAME'),
             labels: <string>Deno.env.get('LABELS'),
             repoUrl: <string>Deno.env.get('REPO_URL'),
