@@ -1,28 +1,33 @@
-import { serve } from "https://deno.land/std@0.151.0/http/server.ts"
-import { Context, Hono } from "https://deno.land/x/hono@v2.0.7/mod.ts"
-import { Workflow } from "./customTypes.ts"
-import { Config } from "./config.ts"
-import { manageJobs, runPendingJobs } from './helpers.ts'
+import { serve } from "https://deno.land/std@0.151.0/http/server.ts";
+import { Context, Hono } from "https://deno.land/x/hono@v2.0.7/mod.ts";
+import { Workflow } from "./customTypes.ts";
+import { Config } from "./config.ts";
+import { manageJobs, runPendingJobs } from "./helpers.ts";
 import { cron } from "https://deno.land/x/deno_cron@v1.0.0/cron.ts";
 
+// create a new hono instance
+const app = new Hono();
+// create a new workflow instance
+const runs = new Workflow();
+// load the config
+const config = new Config();
 
-const app = new Hono()
-const runs = new Workflow()
-const config = new Config().loadConfig()
+// listen for post requests
+app.post("/", async (c: Context) => {
+  // fetch the json data from request
+  const jsonData = await c.req.json();
+  // parse the json data so that program can manage jobs
+  return await manageJobs(jsonData, runs);
+});
 
+// start the server on port 8000
+serve(app.fetch, { port: 8000 });
 
-app.post('/', async (c: Context) => {
-    const jsonData = await c.req.json()
-    await manageJobs(jsonData, runs)
+// Run Job every minute
+const cronJob = () =>
+  cron("* * * * *", () => {
+    console.log("checking for pending jobs...");
+    // run the pending jobs in orkflow instance
     runPendingJobs(runs, config);
-    return new Response()
-})
-
-serve(app.fetch, { port: 8000 })
-
-// // Run Job in every minute
-// const cronJob = () => cron('* * * * *', () => {
-//     console.log('checking for pending jobs...')
-//     runPendingJobs(runs, config);
-// });
-// cronJob()
+  });
+cronJob();

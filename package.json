@@ -1,11 +1,13 @@
 {
   "name": "runner-auto-scale",
-  "version": "1.0.0",
+  "version": "1.2",
   "description": "",
   "main": "src/index.js",
   "scripts": {
+    "start": "deno run --allow-net --allow-read --allow-env --allow-run src/index.ts",
     "dev": "deno run --allow-net --allow-read --allow-env --allow-run --watch src/index.ts",
-    "lint": "deno lint --unstable src",
+    "fmt": "deno fmt src",
+    "lint": "deno lint src",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
