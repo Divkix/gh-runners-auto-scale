@@ -5,6 +5,7 @@ interface configFormat {
   labels: string;
   runnerNamePrefix: string;
   githubHost: string;
+  maxConcurrentJobs: number
 }
 
 /**
@@ -17,6 +18,7 @@ export class Config implements configFormat {
   labels: string;
   runnerNamePrefix: string;
   githubHost: string;
+  maxConcurrentJobs: number;
 
   constructor() {
     const dotEnvConfig = dotEnvConfigFunc();
@@ -30,6 +32,7 @@ export class Config implements configFormat {
       dotEnvConfig.RUNNER_NAME_PREFIX || "runner-auto-scale";
     this.githubHost = Deno.env.get("GITHUB_HOST") || dotEnvConfig.GITHUB_HOST ||
       "https://api.github.com";
+    this.maxConcurrentJobs = Number(Deno.env.get("MAX_CONCURRENT_JOBS")) || Number(dotEnvConfig.MAX_CONCURRENT_JOBS) || -1;
     this.checkConfig();
   }
 

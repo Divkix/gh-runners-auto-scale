@@ -54,6 +54,7 @@ function manageJobs(jsonData: any, runs: Workflow): Response {
     // if action is completed, remove the job from the queue
     case "completed":
       runs.completeRun(job);
+      runs.removeFromLocalRunning(job.id);
       break;
     // if no case is matched, end the program with error message
     default:
@@ -73,12 +74,19 @@ function runPendingJobs(runs: Workflow, config: Config): void {
 
   // get pending jobs from the queue
   const pendingJobs = runs.getQueuedRun();
+  const localRunningJobs = runs.getLocalRunning();
+
+  // if maxConcurrentJobs is set to -1, run all pending jobs and skip the queue
+  // if max jobs are running, return
+  if ((config.maxConcurrentJobs !== -1) && (localRunningJobs.length >= config.maxConcurrentJobs)) return console.log("Maximum jobs running, will try again later")
 
   // if there are no pending jobs, return
   if (pendingJobs.length == 0) return console.log("No pending jobs.");
 
   // iterate over each job in the queue
-  pendingJobs.forEach((job) => {
+  // using splice beacuse we want to run limited jobs at a time, as defined by MAX_CONCURRENT_JOBS
+  // by default: MAX_CONCURRENT_JOBS = -1, which means no limit
+  pendingJobs.slice(0, config.maxConcurrentJobs).forEach((job) => {
     // run the command
     Deno.run({
       // command to run
@@ -96,6 +104,7 @@ function runPendingJobs(runs: Workflow, config: Config): void {
       stderr: "null",
       stdout: "null",
     });
+    runs.runLocally(job);
     console.log(`started container for job ${job.id}.`);
   });
 }

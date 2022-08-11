@@ -96,15 +96,21 @@ export class Workflow {
   inProgressRuns: Array<jobsInterface>;
   /** list for completed runs */
   completedRuns: Array<jobsInterface>;
+  /** list jobs running locally
+   * 
+   * run by the program
+   */
+  localRunning: Array<jobsInterface>;
 
   /**
    * constructor for workflow class
    */
   constructor() {
-    // create empty arrays for queued, in_progress and completed runs
+    // create empty arrays
     this.queuedRuns = Array<jobsInterface>()
     this.inProgressRuns = Array<jobsInterface>()
     this.completedRuns = Array<jobsInterface>()
+    this.localRunning = Array<jobsInterface>()
   }
 
   /**
@@ -115,27 +121,36 @@ export class Workflow {
     return this.queuedRuns
   }
   /**
-   * get in_progress jobs
-   * @return {Array<jobsInterface>} array of jobs in progress
-   */
-  getInProcessRun(): Array<jobsInterface> {
-    return this.inProgressRuns
-  }
-  /**
-   * get completed jobs
-   * @return {Array<jobsInterface>} array of jobs completed
-   */
-  getCompletedRun(): Array<jobsInterface> {
-    return this.completedRuns
-  }
-
-  /**
    * add a job to the queued jobs array
    * @param {jobsInterface} job the workflow job
    */
   queueRun(job: jobsInterface): void {
     this.queuedRuns.push(job)
     console.log(`${job.id} queued.`)
+  }
+  /**
+   * remove a job from the queued jobs array
+   * @param {number} jobId job id of the workflow job
+   */
+  removeFromQueuedRuns(jobId: number): Array<jobsInterface> {
+    return this._removeFromNumberArray(jobId, this.queuedRuns)
+  }
+  /**
+   * clear the queued jobs array
+   */
+  clearQueuedRuns(): void {
+    this.queuedRuns = Array<jobsInterface>()
+  }
+
+
+
+
+  /**
+     * get in_progress jobs
+     * @return {Array<jobsInterface>} array of jobs in progress
+     */
+  getInProcessRun(): Array<jobsInterface> {
+    return this.inProgressRuns
   }
   /**
    * add a job to the in_progress jobs array
@@ -148,6 +163,30 @@ export class Workflow {
     console.log(`${job.id} in progress.`)
   }
   /**
+   * remove a job from the in_progress jobs array
+   * @param {number} jobId job id of the workflow job
+   * @returns {Array<number>} new array
+   */
+  removeFromInProgressRuns(jobId: number): Array<jobsInterface> {
+    return this._removeFromNumberArray(jobId, this.inProgressRuns)
+  }
+  /**
+   * clear the queued jobs array
+   */
+  clearInProgressRuns(): void {
+    this.inProgressRuns = Array<jobsInterface>()
+  }
+
+
+
+  /**
+   * get completed jobs
+   * @return {Array<jobsInterface>} array of jobs completed
+   */
+  getCompletedRun(): Array<jobsInterface> {
+    return this.completedRuns
+  }
+  /**
    * add a job to the completed jobs array
    * and remove from in_progress, queued jobs array
    * @param {jobsInterface} job the workflow job
@@ -158,22 +197,6 @@ export class Workflow {
     this.removeFromInProgressRuns(job.id)
     console.log(`${job.id} completed.`)
   }
-
-  /**
-   * remove a job from the queued jobs array
-   * @param {number} jobId job id of the workflow job
-   */
-  removeFromQueuedRuns(jobId: number): Array<jobsInterface> {
-    return this._removeFromNumberArray(jobId, this.queuedRuns)
-  }
-  /**
-   * remove a job from the in_progress jobs array
-   * @param {number} jobId job id of the workflow job
-   * @returns {Array<number>} new array
-   */
-  removeFromInProgressRuns(jobId: number): Array<jobsInterface> {
-    return this._removeFromNumberArray(jobId, this.inProgressRuns)
-  }
   /**
    * remove a job from the completed jobs array
    * @param {number} jobId job id of the workflow job
@@ -182,27 +205,46 @@ export class Workflow {
   removeFromCompletedRuns(jobId: number): Array<jobsInterface> {
     return this._removeFromNumberArray(jobId, this.completedRuns)
   }
-
-  /**
-   * clear the queued jobs array
-   */
-  clearQueuedRuns(): void {
-    this.queuedRuns = Array<jobsInterface>()
-  }
-
-  /**
-   * clear the queued jobs array
-   */
-  clearInProgressRuns(): void {
-    this.inProgressRuns = Array<jobsInterface>()
-  }
-
   /**
    * clear the queued jobs array
    */
   clearCompletedRuns(): void {
     this.completedRuns = Array<jobsInterface>()
   }
+
+
+
+  /**
+   * get local running jobs
+   * @returns {Array<jobsInterface>} array of jobs running locally
+   */
+  getLocalRunning(): Array<jobsInterface> {
+    return this.localRunning
+  }
+  /**
+   * add a job to the local running jobs array
+   * @param {jobsInterface} job job to be added to local running array
+   */
+  runLocally(job: jobsInterface): void {
+    this.localRunning.push(job)
+    console.log(`${job.id} running locally.`)
+  }
+  /**
+   * remove a job from the local running jobs array
+   * @param {number} jobId job id of the workflow job
+   * @returns {Array<number>} new array after removing job
+   */
+  removeFromLocalRunning(jobId: number): Array<jobsInterface> {
+    return this._removeFromNumberArray(jobId, this.localRunning)
+  }
+  /**
+   * clear the local running jobs array
+   */
+  clearLocalRunning(): void {
+    this.localRunning = Array<jobsInterface>()
+  }
+
+
 
   /**
    * clear all runs
@@ -212,8 +254,13 @@ export class Workflow {
     this.clearInProgressRuns()
     this.clearCompletedRuns()
   }
-
-
+  /**
+   * clear all runs
+   */
+  clearAll(): void {
+    this.clearAllRuns()
+    this.clearLocalRunning()
+  }
   /**
    * Helper function to remove an element from an array of numbers
    * @param {number} item number
