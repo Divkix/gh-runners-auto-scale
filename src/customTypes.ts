@@ -183,6 +183,36 @@ export class Workflow {
     return this._removeFromNumberArray(jobId, this.completedRuns)
   }
 
+  /**
+   * clear the queued jobs array
+   */
+  clearQueuedRuns(): void {
+    this.queuedRuns = Array<jobsInterface>()
+  }
+
+  /**
+   * clear the queued jobs array
+   */
+  clearInProgressRuns(): void {
+    this.inProgressRuns = Array<jobsInterface>()
+  }
+
+  /**
+   * clear the queued jobs array
+   */
+  clearCompletedRuns(): void {
+    this.completedRuns = Array<jobsInterface>()
+  }
+
+  /**
+   * clear all runs
+   */
+  clearAllRuns(): void {
+    this.clearQueuedRuns()
+    this.clearInProgressRuns()
+    this.clearCompletedRuns()
+  }
+
 
   /**
    * Helper function to remove an element from an array of numbers

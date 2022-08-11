@@ -23,11 +23,16 @@ app.post("/", async (c: Context) => {
 // start the server on port 8000
 serve(app.fetch, { port: 8000 });
 
-// Run Job every minute
-const cronJob = () =>
-  cron("* * * * *", () => {
-    console.log("checking for pending jobs...");
-    // run the pending jobs in orkflow instance
-    runPendingJobs(runs, config);
-  });
-cronJob();
+// runs every minute
+cron("* * * * *", () => {
+  console.log("checking for pending jobs...");
+  // run the pending jobs in orkflow instance
+  runPendingJobs(runs, config);
+});
+
+// runs every hour
+cron("0 * * * *", () => {
+  console.log("cleaning unused jobs and containers...");
+  // clear completedRuns every hour
+  runs.clearCompletedRuns();
+})
