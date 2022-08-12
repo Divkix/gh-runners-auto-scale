@@ -27,9 +27,9 @@ export class Config implements configFormat {
     this.accessToken = Deno.env.get("ACCESS_TOKEN") ||
       dotEnvConfig.ACCESS_TOKEN;
     this.labels = Deno.env.get("LABELS") || dotEnvConfig.LABELS ||
-      "runner-auto-scale";
+      "gh-runners-auto-scale";
     this.runnerNamePrefix = Deno.env.get("RUNNER_NAME_PREFIX") ||
-      dotEnvConfig.RUNNER_NAME_PREFIX || "runner-auto-scale";
+      dotEnvConfig.RUNNER_NAME_PREFIX || "gh-runners-auto-scale";
     this.githubHost = Deno.env.get("GITHUB_HOST") || dotEnvConfig.GITHUB_HOST ||
       "https://api.github.com";
     this.maxConcurrentJobs = Number(Deno.env.get("MAX_CONCURRENT_JOBS")) || Number(dotEnvConfig.MAX_CONCURRENT_JOBS) || -1;
