@@ -31,7 +31,7 @@ function manageJobs(jsonData: any, runs: Workflow): Response {
     // check the scope of the job, if it a organisation webhook or repository webhook
     // create a new jobs object to be added to the queue
     const job: jobsInterface = {
-        id: <number> workflow.workflow_job?.id,
+        id: <number>workflow.workflow_job?.id,
         url: workflow.repository.html_url,
     };
     // perform actions based on the action received
@@ -53,8 +53,8 @@ function manageJobs(jsonData: any, runs: Workflow): Response {
             break;
         // if action is completed, remove the job from the queue
         case 'completed':
-            runs.completeRun(job);
             runs.removeFromLocalRunning(job.id);
+            runs.completeRun(job);
             break;
         // if no case is matched, end the program with error message
         default:
@@ -70,11 +70,12 @@ function manageJobs(jsonData: any, runs: Workflow): Response {
  * @param {configFormat} config the config object
  */
 function runPendingJobs(runs: Workflow, config: Config): void {
-    console.log('running pending jobs...');
-
     // get pending jobs from the queue
     const pendingJobs = runs.getQueuedRun();
     const localRunningJobs = runs.getLocalRunning();
+
+    console.log(`${pendingJobs.length} jobs in queue`);
+    console.log(`${localRunningJobs.length} currently in progress`);
 
     // if maxConcurrentJobs is set to -1, run all pending jobs and skip the queue
     // if max jobs are running, return
@@ -85,17 +86,21 @@ function runPendingJobs(runs: Workflow, config: Config): void {
         return console.log('Maximum jobs running, will try again later');
     }
 
+    // maxRunsNow is the number of jobs to run after reducing local running jobs from maxConcurrentJobs
+    const maxRunsNow = config.maxConcurrentJobs - localRunningJobs.length
+
     // if there are no pending jobs, return
     if (pendingJobs.length == 0) return console.log('No pending jobs.');
 
     // iterate over each job in the queue
     // using splice beacuse we want to run limited jobs at a time, as defined by MAX_CONCURRENT_JOBS
     // by default: MAX_CONCURRENT_JOBS = -1, which means no limit
-    pendingJobs.slice(0, config.maxConcurrentJobs).forEach((job) => {
+    pendingJobs.slice(0, maxRunsNow).forEach((job) => {
         // run the command
         Deno.run({
             // command to run
             cmd: ['./create-container.sh'],
+
             // env vars for the command to be run
             env: {
                 'RUNNER_NAME_PREFIX': config.runnerNamePrefix,

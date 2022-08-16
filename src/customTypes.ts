@@ -132,8 +132,8 @@ export class Workflow {
      * remove a job from the queued jobs array
      * @param {number} jobId job id of the workflow job
      */
-    removeFromQueuedRuns(jobId: number): Array<jobsInterface> {
-        return this._removeFromNumberArray(jobId, this.queuedRuns);
+    removeFromQueuedRuns(jobId: number) {
+        this.queuedRuns = this._removeFromJobsArray(jobId, this.queuedRuns);
     }
     /**
      * clear the queued jobs array
@@ -164,8 +164,8 @@ export class Workflow {
      * @param {number} jobId job id of the workflow job
      * @returns {Array<number>} new array
      */
-    removeFromInProgressRuns(jobId: number): Array<jobsInterface> {
-        return this._removeFromNumberArray(jobId, this.inProgressRuns);
+    removeFromInProgressRuns(jobId: number) {
+        this.inProgressRuns = this._removeFromJobsArray(jobId, this.inProgressRuns);
     }
     /**
      * clear the queued jobs array
@@ -197,8 +197,8 @@ export class Workflow {
      * @param {number} jobId job id of the workflow job
      * @returns {Array<number>} new array
      */
-    removeFromCompletedRuns(jobId: number): Array<jobsInterface> {
-        return this._removeFromNumberArray(jobId, this.completedRuns);
+    removeFromCompletedRuns(jobId: number) {
+        this.completedRuns = this._removeFromJobsArray(jobId, this.completedRuns);
     }
     /**
      * clear the queued jobs array
@@ -227,8 +227,8 @@ export class Workflow {
      * @param {number} jobId job id of the workflow job
      * @returns {Array<number>} new array after removing job
      */
-    removeFromLocalRunning(jobId: number): Array<jobsInterface> {
-        return this._removeFromNumberArray(jobId, this.localRunning);
+    removeFromLocalRunning(jobId: number) {
+        this.localRunning = this._removeFromJobsArray(jobId, this.localRunning);
     }
     /**
      * clear the local running jobs array
@@ -258,18 +258,10 @@ export class Workflow {
      * @param {Array<jobsInterface>} array of number
      * @returns {Array<jobsInterface>} the new spliced array
      */
-    _removeFromNumberArray(
+    _removeFromJobsArray(
         item: number,
         array: Array<jobsInterface>,
     ): Array<jobsInterface> {
-        array.forEach((job, index) => {
-            if (job.id === item) { // only splice array when item is found
-                if (index > -1) {
-                    // 2nd parameter means remove one item only
-                    return array.splice(index, 1);
-                }
-            }
-        });
-        return array;
+        return array.filter(job => job.id !== item);
     }
 }
