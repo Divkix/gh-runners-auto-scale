@@ -1,3 +1,5 @@
+import { Redis } from "./deps.ts"
+
 /**
  * interface for workflow_job object received from webhook
  */
@@ -86,31 +88,86 @@ export interface jobsInterface {
 }
 
 /**
+ * class for manageing queues for jobs
+ * @class jobsArray
+ */
+class jobsArray {
+    /** redis client */
+    redis: Redis;
+    /** name of queue */
+    queueName: string;
+
+    constructor(redis: Redis, queueName: string) {
+        this.queueName = queueName;
+        this.redis = redis;
+    }
+
+    /**
+     * get queued jobs
+     * @return {Array<jobsInterface>} array of jobs queued
+     */
+    list(): Array<jobsInterface> {
+        let jobsList: Array<jobsInterface> = [];
+        this.redis.lrange(this.queueName, 0, -1).then((jobs) => {
+            jobsList = jobs.map((job) => JSON.parse(job));
+        });
+        return jobsList;
+    }
+
+    /**
+     * push job to queue
+     * @param {number} jobId of job
+     */
+    push(job: jobsInterface): void {
+        this.redis.rpush(this.queueName, JSON.stringify(job));
+    }
+
+    /**
+     * remove job from queue
+     * @param {number} jobId of job
+     */
+    remove(jobId: number) {
+        this.redis.lrem(this.queueName, 0, JSON.stringify({ id: jobId }));
+    }
+
+    /**
+     * clear job queue
+     */
+    clearQueue() {
+        this.redis.del(this.queueName);
+    }
+}
+
+/**
  * class for manageing workflows
  * @class Workflow
  */
 export class Workflow {
     /** list for queued runs */
-    queuedRuns: Array<jobsInterface>;
+    queuedRuns: jobsArray;
     /** list for in_progress runs */
-    inProgressRuns: Array<jobsInterface>;
+    inProgressRuns: jobsArray;
     /** list for completed runs */
-    completedRuns: Array<jobsInterface>;
+    completedRuns: jobsArray;
     /** list jobs running locally
      *
      * run by the program
      */
-    localRunning: Array<jobsInterface>;
+    localRunning: jobsArray;
 
     /**
      * constructor for workflow class
      */
-    constructor() {
-        // create empty arrays
-        this.queuedRuns = Array<jobsInterface>();
-        this.inProgressRuns = Array<jobsInterface>();
-        this.completedRuns = Array<jobsInterface>();
-        this.localRunning = Array<jobsInterface>();
+    constructor(redisClient: Redis) {
+        // create empty arrays for jobs
+        /** list for queued runs */
+        this.queuedRuns = new jobsArray(redisClient, "queuedRuns");
+        /** list for in_progress runs */
+        this.inProgressRuns = new jobsArray(redisClient, "inProgressRuns");
+        /** list for completed runs */
+        this.completedRuns = new jobsArray(redisClient, "completedRuns");
+        /** list jobs running locally */
+        this.localRunning = new jobsArray(redisClient, "localRunning");
     }
 
     /**
@@ -118,7 +175,7 @@ export class Workflow {
      * @return {Array<jobsInterface>} array of jobs queued
      */
     getQueuedRun(): Array<jobsInterface> {
-        return this.queuedRuns;
+        return this.queuedRuns.list();
     }
     /**
      * add a job to the queued jobs array
@@ -133,13 +190,13 @@ export class Workflow {
      * @param {number} jobId job id of the workflow job
      */
     removeFromQueuedRuns(jobId: number) {
-        this.queuedRuns = this._removeFromJobsArray(jobId, this.queuedRuns);
+        this.queuedRuns.remove(jobId);
     }
     /**
      * clear the queued jobs array
      */
     clearQueuedRuns(): void {
-        this.queuedRuns = Array<jobsInterface>();
+        this.queuedRuns.clearQueue();
     }
 
     /**
@@ -147,7 +204,7 @@ export class Workflow {
      * @return {Array<jobsInterface>} array of jobs in progress
      */
     getInProcessRun(): Array<jobsInterface> {
-        return this.inProgressRuns;
+        return this.inProgressRuns.list();
     }
     /**
      * add a job to the in_progress jobs array
@@ -165,13 +222,13 @@ export class Workflow {
      * @returns {Array<number>} new array
      */
     removeFromInProgressRuns(jobId: number) {
-        this.inProgressRuns = this._removeFromJobsArray(jobId, this.inProgressRuns);
+        this.inProgressRuns.remove(jobId);
     }
     /**
      * clear the queued jobs array
      */
     clearInProgressRuns(): void {
-        this.inProgressRuns = Array<jobsInterface>();
+        this.inProgressRuns.clearQueue();
     }
 
     /**
@@ -179,7 +236,7 @@ export class Workflow {
      * @return {Array<jobsInterface>} array of jobs completed
      */
     getCompletedRun(): Array<jobsInterface> {
-        return this.completedRuns;
+        return this.completedRuns.list();
     }
     /**
      * add a job to the completed jobs array
@@ -198,13 +255,13 @@ export class Workflow {
      * @returns {Array<number>} new array
      */
     removeFromCompletedRuns(jobId: number) {
-        this.completedRuns = this._removeFromJobsArray(jobId, this.completedRuns);
+        this.completedRuns.remove(jobId);
     }
     /**
      * clear the queued jobs array
      */
     clearCompletedRuns(): void {
-        this.completedRuns = Array<jobsInterface>();
+        this.completedRuns.clearQueue();
     }
 
     /**
@@ -212,7 +269,7 @@ export class Workflow {
      * @returns {Array<jobsInterface>} array of jobs running locally
      */
     getLocalRunning(): Array<jobsInterface> {
-        return this.localRunning;
+        return this.localRunning.list();
     }
     /**
      * add a job to the local running jobs array
@@ -228,13 +285,13 @@ export class Workflow {
      * @returns {Array<number>} new array after removing job
      */
     removeFromLocalRunning(jobId: number) {
-        this.localRunning = this._removeFromJobsArray(jobId, this.localRunning);
+        this.localRunning.remove(jobId);
     }
     /**
      * clear the local running jobs array
      */
     clearLocalRunning(): void {
-        this.localRunning = Array<jobsInterface>();
+        this.localRunning.clearQueue();
     }
 
     /**
@@ -251,17 +308,5 @@ export class Workflow {
     clearAll(): void {
         this.clearAllRuns();
         this.clearLocalRunning();
-    }
-    /**
-     * Helper function to remove an element from an array of numbers
-     * @param {number} item number
-     * @param {Array<jobsInterface>} array of number
-     * @returns {Array<jobsInterface>} the new spliced array
-     */
-    _removeFromJobsArray(
-        item: number,
-        array: Array<jobsInterface>,
-    ): Array<jobsInterface> {
-        return array.filter(job => job.id !== item);
     }
 }

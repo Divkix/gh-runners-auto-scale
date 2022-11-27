@@ -1,16 +1,21 @@
-import { serve } from 'https://deno.land/std@0.151.0/http/server.ts';
-import { Context, Hono } from 'https://deno.land/x/hono@v2.0.7/mod.ts';
 import { Workflow } from './customTypes.ts';
 import { Config } from './config.ts';
 import { manageJobs, runPendingJobs } from './helpers.ts';
-import { cron } from 'https://deno.land/x/deno_cron@v1.0.0/cron.ts';
+import { serve, Context, Hono, cron, connect } from './deps.ts';
 
 // create a new hono instance
 const app = new Hono();
-// create a new workflow instance
-const runs = new Workflow();
 // load the config
 const config = new Config();
+// create a new redis client instance
+const redis = await connect({
+    username: config.redisUsername,
+    password: config.redisPassword,
+    hostname: config.redisHost,
+    port: config.redisPort,
+});
+// create a new workflow instance
+const runs = new Workflow(redis);
 
 // listen for post requests
 app.post('/', async (c: Context) => {

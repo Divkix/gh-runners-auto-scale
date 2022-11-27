@@ -1,4 +1,5 @@
-import { config as dotEnvConfigFunc } from 'https://deno.land/x/dotenv@v3.2.0/mod.ts';
+import { dotEnvConfigFunc } from './deps.ts';
+
 interface configFormat {
     runAsRoot: boolean;
     accessToken: string;
@@ -6,6 +7,10 @@ interface configFormat {
     runnerNamePrefix: string;
     githubHost: string;
     maxConcurrentJobs: number;
+    redisUsername: string;
+    redisPassword: string;
+    redisHost: string;
+    redisPort: number;
 }
 
 /**
@@ -19,6 +24,10 @@ export class Config implements configFormat {
     runnerNamePrefix: string;
     githubHost: string;
     maxConcurrentJobs: number;
+    redisUsername: string;
+    redisPassword: string;
+    redisHost: string;
+    redisPort: number;
 
     constructor() {
         const dotEnvConfig = dotEnvConfigFunc();
@@ -35,6 +44,14 @@ export class Config implements configFormat {
             'https://api.github.com';
         this.maxConcurrentJobs = Number(Deno.env.get('MAX_CONCURRENT_JOBS')) ||
             Number(dotEnvConfig.MAX_CONCURRENT_JOBS) || -1;
+        this.redisUsername = Deno.env.get('REDIS_USERNAME') ||
+            dotEnvConfig.REDIS_USERNAME || '';
+        this.redisPassword = Deno.env.get('REDIS_PASSWORD') ||
+            dotEnvConfig.REDIS_PASSWORD || '';
+        this.redisHost = Deno.env.get('REDIS_HOST') ||
+            dotEnvConfig.REDIS_HOST || "localhost";
+        this.redisPort = Number(Deno.env.get('REDIS_PORT')) ||
+            Number(dotEnvConfig.REDIS_PORT) || 6379;
         this.checkConfig();
     }
 
